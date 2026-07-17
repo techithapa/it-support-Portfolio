@@ -1,0 +1,785 @@
+# Document 04: High Disk Usage (100%) Troubleshooting
+
+## 1. Overview
+
+High disk usage occurs when the storage device (HDD or SSD) is operating at or near maximum capacity. When Task Manager displays **100% Disk Usage**, Windows may become extremely slow because the storage device cannot process read/write requests quickly enough.
+
+Unlike high CPU usage, where the processor is overloaded, high disk usage means applications are waiting for data to be read from or written to storage.
+
+---
+
+# 2. Problem Description
+
+## Example User Ticket
+
+> "My computer is very slow after startup. Applications take several minutes to open, File Explorer freezes, and Task Manager shows Disk usage at 100%."
+
+---
+
+# 3. User Symptoms
+
+Users may experience:
+
+* Slow computer startup
+* Applications freezing
+* Delayed opening of files
+* Browser becoming unresponsive
+* Windows Search taking too long
+* High fan activity
+* Constant hard drive activity noise
+* Slow login process
+* Programs showing "Not Responding"
+
+---
+
+# 4. Environment
+
+## Typical Enterprise Environment
+
+| Component        | Details                            |
+| ---------------- | ---------------------------------- |
+| Operating System | Windows 10 / Windows 11 Enterprise |
+| Storage          | HDD / SSD / NVMe SSD               |
+| RAM              | 8GB–32GB                           |
+| Management       | Microsoft Intune / Group Policy    |
+| Security         | Microsoft Defender                 |
+| Applications     | Microsoft 365, Teams, Browsers     |
+| Users            | Standard enterprise users          |
+
+---
+
+# 5. Common Causes
+
+## Software Causes
+
+### 1. Windows Search Indexing
+
+Windows continuously indexes files to provide faster search results.
+
+Problem:
+
+* Large number of files
+* Recently migrated user profile
+* New Windows installation
+
+---
+
+### 2. SysMain Service
+
+SysMain (formerly Superfetch) predicts frequently used applications and preloads them.
+
+Problem:
+
+Common on:
+
+* Older HDD systems
+* Low-memory devices
+
+---
+
+### 3. Windows Update
+
+During updates Windows may:
+
+* Download packages
+* Extract files
+* Install patches
+
+---
+
+### 4. Antivirus Scanning
+
+Security software may scan:
+
+* Large files
+* Downloads
+* System folders
+
+---
+
+## Hardware Causes
+
+### 1. Failing Hard Drive
+
+Symptoms:
+
+* Slow response
+* Clicking noises
+* Disk errors
+
+---
+
+### 2. Low Free Storage
+
+Windows requires free space for:
+
+* Temporary files
+* Virtual memory
+* Updates
+
+Recommended:
+
+```text
+Minimum: 15-20% free space
+```
+
+---
+
+### 3. Insufficient RAM
+
+When RAM is full:
+
+Windows uses:
+
+```text
+Page File (Virtual Memory)
+```
+
+This increases disk usage.
+
+---
+
+# 6. Troubleshooting Workflow Diagram
+
+Save as:
+
+```text
+Images/disk-troubleshooting-flow.png
+```
+
+```text
+                 User Reports Slow System
+                           |
+                           ▼
+              Check Task Manager Disk Usage
+                           |
+                           ▼
+                  Is Disk Usage 100%?
+                           |
+              ┌────────────┴────────────┐
+              ▼                         ▼
+             Yes                        No
+              |                         |
+              ▼                         ▼
+    Identify Disk-Heavy Process     Check Other Issues
+              |
+              ▼
+     Check Storage Health
+              |
+       ┌──────┴─────────┐
+       ▼                ▼
+  Software Issue    Hardware Issue
+       |                |
+       ▼                ▼
+ Disable Service   Replace Drive
+ Repair Windows
+       |
+       ▼
+ Verify Performance
+```
+
+---
+
+# 7. Tools Used
+
+| Tool             | Purpose                              |
+| ---------------- | ------------------------------------ |
+| Task Manager     | Identify disk-consuming applications |
+| Resource Monitor | Detailed disk activity               |
+| Disk Management  | Check partitions                     |
+| Event Viewer     | Identify disk errors                 |
+| PowerShell       | Disk monitoring                      |
+| CHKDSK           | File system repair                   |
+| SMART Tools      | Drive health                         |
+| Device Manager   | Storage drivers                      |
+
+---
+
+# 8. Initial Investigation
+
+## Step 1: Open Task Manager
+
+Press:
+
+```text
+CTRL + SHIFT + ESC
+```
+
+Navigate:
+
+```
+Performance
+    |
+    └── Disk
+```
+
+Check:
+
+* Active time %
+* Read speed
+* Write speed
+* Disk type
+
+---
+
+Example:
+
+```
+Disk 0 (C:)
+
+Active Time: 100%
+
+Read Speed: 2 MB/s
+Write Speed: 1 MB/s
+```
+
+---
+
+Image:
+
+```
+Images/task-manager-disk-usage.png
+```
+
+---
+
+# 9. Identify Applications Using Disk
+
+Open:
+
+```
+Task Manager
+        |
+        └── Processes
+```
+
+Sort by:
+
+```
+Disk Column
+```
+
+Example:
+
+```
+Process                 Disk Usage
+
+Windows Update          80 MB/s
+Antimalware Service     50 MB/s
+Chrome                  20 MB/s
+```
+
+---
+
+# 10. Use Resource Monitor for Detailed Analysis
+
+Task Manager provides limited information.
+
+Open:
+
+```
+Windows + R
+```
+
+Type:
+
+```cmd
+resmon
+```
+
+Press Enter.
+
+---
+
+Select:
+
+```
+Disk Tab
+```
+
+Review:
+
+* Processes with disk activity
+* File locations
+* Read/write speed
+
+---
+
+Image:
+
+```
+Images/resource-monitor-disk.png
+```
+
+---
+
+# 11. Check Disk Health
+
+## Method 1: PowerShell
+
+Open PowerShell as Administrator.
+
+Run:
+
+```powershell
+Get-PhysicalDisk
+```
+
+Example output:
+
+```
+FriendlyName     HealthStatus
+
+Samsung SSD      Healthy
+```
+
+---
+
+## Explanation
+
+`Get-PhysicalDisk`
+
+Retrieves:
+
+* Disk model
+* Health condition
+* Operational status
+
+---
+
+# 12. Disk Health Monitoring Script
+
+Create:
+
+```
+Scripts/Disk-Health-Check.ps1
+```
+
+Script:
+
+```powershell
+Write-Host "Checking Disk Health..."
+
+Get-PhysicalDisk |
+Select-Object `
+FriendlyName,
+MediaType,
+HealthStatus,
+OperationalStatus
+```
+
+---
+
+## Script Explanation
+
+### Get-PhysicalDisk
+
+Collects physical drive information.
+
+---
+
+### Select-Object
+
+Displays only required information.
+
+Output:
+
+```
+FriendlyName     HealthStatus
+
+NVMe SSD         Healthy
+HDD              Warning
+```
+
+---
+
+# 13. Check Disk Errors Using Event Viewer
+
+Open:
+
+```cmd
+eventvwr.msc
+```
+
+Navigate:
+
+```
+Windows Logs
+       |
+       └── System
+```
+
+Filter:
+
+```
+Source:
+Disk
+Ntfs
+storahci
+```
+
+---
+
+Common errors:
+
+| Event        | Meaning           |
+| ------------ | ----------------- |
+| Event ID 7   | Bad sectors       |
+| Event ID 51  | Disk paging error |
+| Event ID 129 | Storage timeout   |
+
+---
+
+# 14. Run CHKDSK Disk Repair
+
+CHKDSK checks and repairs file system problems.
+
+---
+
+Open:
+
+```
+Command Prompt
+(Run as Administrator)
+```
+
+Run:
+
+```cmd
+chkdsk C: /f
+```
+
+---
+
+## Explanation
+
+### C:
+
+Specifies the drive.
+
+---
+
+### /f
+
+Fixes file system errors.
+
+---
+
+Example:
+
+```
+CHKDSK cannot run because volume is in use.
+
+Schedule this volume to be checked at restart?
+(Y/N)
+```
+
+Select:
+
+```
+Y
+```
+
+Restart computer.
+
+---
+
+## Advanced Scan
+
+```cmd
+chkdsk C: /f /r
+```
+
+Explanation:
+
+| Parameter | Function                            |
+| --------- | ----------------------------------- |
+| /f        | Fix errors                          |
+| /r        | Locate bad sectors and recover data |
+
+---
+
+# 15. Disable SysMain Service
+
+For older HDD systems, SysMain can cause high disk usage.
+
+---
+
+## Check Service
+
+Open:
+
+```cmd
+services.msc
+```
+
+Find:
+
+```
+SysMain
+```
+
+---
+
+Stop Service:
+
+1. Right-click SysMain
+2. Select Stop
+
+Change:
+
+```
+Startup Type:
+Disabled
+```
+
+---
+
+## PowerShell Method
+
+Run:
+
+```powershell
+Stop-Service SysMain
+
+Set-Service SysMain -StartupType Disabled
+```
+
+---
+
+Explanation:
+
+First command:
+
+```
+Stop-Service
+```
+
+Stops current service.
+
+Second command:
+
+```
+Set-Service
+```
+
+Prevents automatic startup.
+
+---
+
+# 16. Disable Windows Search Indexing (Testing)
+
+If indexing causes high disk usage:
+
+Run:
+
+```powershell
+Stop-Service WSearch
+
+Set-Service WSearch -StartupType Disabled
+```
+
+---
+
+Note:
+
+Do not permanently disable in environments where users rely heavily on Windows Search.
+
+---
+
+# 17. Check Storage Space
+
+PowerShell:
+
+```powershell
+Get-PSDrive C
+```
+
+Example:
+
+```
+Name Used Free
+
+C    220GB 10GB
+```
+
+---
+
+If storage is low:
+
+Remove:
+
+* Temporary files
+* Old downloads
+* Windows update cleanup files
+
+---
+
+# 18. Disk Cleanup Automation Script
+
+Create:
+
+```
+Scripts/Cleanup-Disk-Space.ps1
+```
+
+Script:
+
+```powershell
+Write-Host "Cleaning Temporary Files..."
+
+Remove-Item `
+"$env:TEMP\*" `
+-Recurse `
+-Force `
+-ErrorAction SilentlyContinue
+
+
+Remove-Item `
+"C:\Windows\Temp\*" `
+-Recurse `
+-Force `
+-ErrorAction SilentlyContinue
+
+
+Write-Host "Cleanup Completed"
+```
+
+---
+
+# 19. Check Virtual Memory Configuration
+
+Low RAM can cause excessive paging.
+
+Open:
+
+```
+System Properties
+        |
+Advanced
+        |
+Performance Settings
+        |
+Advanced
+        |
+Virtual Memory
+```
+
+Recommended:
+
+Enable:
+
+```
+Automatically manage paging file size
+```
+
+---
+
+# 20. Check Storage Drivers
+
+Open:
+
+```cmd
+devmgmt.msc
+```
+
+Navigate:
+
+```
+Storage Controllers
+```
+
+Check:
+
+* Warning symbols
+* Outdated drivers
+
+Update:
+
+```
+Right-click
+→ Update Driver
+```
+
+---
+
+# 21. Verify Resolution
+
+After applying fixes:
+
+Check:
+
+## Task Manager
+
+Expected:
+
+```
+Disk Usage:
+5-30% normal activity
+```
+
+---
+
+Confirm:
+
+✓ Applications open faster
+✓ File Explorer responds normally
+✓ Startup time improved
+✓ No disk errors in Event Viewer
+✓ User confirms improvement
+
+---
+
+# 22. Outcome
+
+Successful troubleshooting results:
+
+✓ Reduced disk utilisation
+✓ Improved system responsiveness
+✓ Faster application loading
+✓ Increased storage reliability
+✓ Reduced user downtime
+
+---
+
+# 23. Lesson Learned
+
+* Always identify the process causing disk activity before changing services.
+* HDD-based systems require different troubleshooting compared to SSD systems.
+* Event Viewer is essential for identifying storage failures.
+* CHKDSK can repair logical disk issues but cannot fix failing hardware.
+* PowerShell automation helps perform health checks efficiently across multiple devices.
+* Storage performance directly affects overall Windows experience.
+
+---
+
+# 24. Preventive Best Practices
+
+## Users
+
+* Maintain at least 20% free disk space.
+* Avoid storing unnecessary large files locally.
+* Restart computers regularly.
+* Install applications from trusted sources.
+
+---
+
+## IT Administrators
+
+* Monitor disk health using Intune.
+* Replace failing HDDs proactively.
+* Standardise SSD deployment.
+* Configure storage monitoring alerts.
+* Maintain backup procedures.
+
+---
+
+# 25. Escalation Criteria
+
+Escalate when:
+
+* SMART reports disk failure.
+* Drive produces unusual noises.
+* CHKDSK reports bad sectors repeatedly.
+* Multiple users experience the same issue.
+* Hardware replacement is required.
