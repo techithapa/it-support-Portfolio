@@ -1,0 +1,754 @@
+# Document 03: High CPU Usage Troubleshooting
+
+## 1. Overview
+
+High CPU usage occurs when one or more processes consume excessive processor resources, causing the computer to become slow, unresponsive, or unstable.
+
+The CPU (Central Processing Unit) is responsible for executing instructions from:
+
+* Windows operating system processes
+* Applications
+* Background services
+* Security software
+* User activities
+
+When CPU usage remains consistently high (90–100%), users may experience:
+
+* Slow application response
+* Application freezing
+* Delayed keyboard/mouse input
+* Fan running continuously
+* Increased battery consumption
+* System overheating
+* Unexpected shutdowns
+
+CPU troubleshooting requires identifying the process causing high usage and determining whether the cause is:
+
+* Application-related
+* Windows service-related
+* Malware-related
+* Hardware-related
+* Configuration-related
+
+---
+
+# 2. Problem Description
+
+## Example User Ticket
+
+> "My laptop has become extremely slow. The fan is constantly running, Teams keeps freezing, and Task Manager shows CPU usage at 100%."
+
+---
+
+# 3. Environment
+
+## Typical Enterprise Environment
+
+| Component        | Details                                |
+| ---------------- | -------------------------------------- |
+| Operating System | Windows 10 / Windows 11 Enterprise     |
+| Hardware         | Business laptops/desktops              |
+| CPU              | Intel Core i5/i7, AMD Ryzen            |
+| RAM              | 8GB–32GB                               |
+| Management       | Microsoft Intune / Group Policy        |
+| Security         | Microsoft Defender / Endpoint Security |
+| Applications     | Microsoft 365, Teams, Browsers, VPN    |
+
+---
+
+# 4. Common Causes
+
+## Application Causes
+
+* Browser with many active tabs
+* Video conferencing applications
+* Database applications
+* Background synchronisation tools
+* Poorly optimised applications
+
+Examples:
+
+* Microsoft Teams
+* Google Chrome
+* OneDrive
+* Adobe applications
+
+---
+
+## Windows Causes
+
+* Windows Update running
+* Search indexing
+* SysMain service
+* Background maintenance
+* Driver problems
+
+---
+
+## Security Causes
+
+* Malware infection
+* Unwanted background processes
+* Cryptomining malware
+
+---
+
+## Hardware Causes
+
+* Overheating
+* Dust buildup
+* Poor ventilation
+* CPU thermal throttling
+* Aging hardware
+
+---
+
+# 5. Troubleshooting Workflow Diagram
+
+Save as:
+
+```text
+Images/cpu-troubleshooting-flow.png
+```
+
+```text
+              User Reports Slow Computer
+                         |
+                         ▼
+              Check CPU Usage Percentage
+                         |
+                         ▼
+              Open Task Manager
+                         |
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+   Application       Windows Service    Unknown Process
+        |                |                |
+        ▼                ▼                ▼
+ Close/Update       Review Service    Malware Scan
+ Application        Configuration
+        |
+        ▼
+   Check Drivers
+        |
+        ▼
+  Run System Diagnostics
+        |
+        ▼
+ Verify CPU Returns Normal
+```
+
+---
+
+# 6. Tools Used
+
+| Tool                | Purpose                      |
+| ------------------- | ---------------------------- |
+| Task Manager        | Identify high CPU processes  |
+| Resource Monitor    | Detailed CPU analysis        |
+| Performance Monitor | Long-term monitoring         |
+| Event Viewer        | Review system events         |
+| PowerShell          | Process investigation        |
+| Windows Defender    | Malware scanning             |
+| Device Manager      | Driver validation            |
+| Reliability Monitor | Application failure analysis |
+
+---
+
+# 7. Initial User Assessment
+
+Before troubleshooting, gather information.
+
+Ask:
+
+### When does CPU usage increase?
+
+Examples:
+
+* Immediately after startup?
+* When opening applications?
+* During Teams meetings?
+* While browsing?
+* Randomly?
+
+---
+
+### Does the system show:
+
+* Loud fan noise?
+* Overheating?
+* Battery drain?
+* Application crashes?
+
+---
+
+### Did the issue start after:
+
+* Windows update?
+* New software installation?
+* Driver update?
+
+---
+
+# 8. Check CPU Usage Using Task Manager
+
+## Step 1: Open Task Manager
+
+Press:
+
+```text
+CTRL + SHIFT + ESC
+```
+
+or:
+
+```text
+Right-click Taskbar → Task Manager
+```
+
+---
+
+## Step 2: View CPU Usage
+
+Navigate:
+
+```
+Task Manager
+        |
+        └── Processes
+```
+
+Click:
+
+```
+CPU Column
+```
+
+to sort highest usage first.
+
+---
+
+Example:
+
+```text
+Process              CPU
+
+Microsoft Teams      65%
+Chrome               25%
+Windows Defender     10%
+```
+
+---
+
+Image:
+
+```text
+Images/task-manager-cpu.png
+```
+
+---
+
+# 9. Identify the Problem Process
+
+## Example
+
+If:
+
+```
+Teams.exe = 80%
+```
+
+Actions:
+
+1. Close Teams
+2. Restart Teams
+3. Update application
+4. Clear Teams cache
+
+---
+
+If:
+
+```
+Unknown.exe = 95%
+```
+
+Actions:
+
+* Check file location
+* Perform security scan
+* Investigate process legitimacy
+
+---
+
+# 10. Using Resource Monitor
+
+Task Manager provides basic information.
+
+Resource Monitor provides deeper analysis.
+
+---
+
+## Open Resource Monitor
+
+Press:
+
+```
+Windows + R
+```
+
+Type:
+
+```cmd
+resmon
+```
+
+Press Enter.
+
+---
+
+Navigate:
+
+```
+CPU Tab
+```
+
+Review:
+
+* Processes
+* CPU usage
+* Threads
+* Services
+
+---
+
+Image:
+
+```text
+Images/resource-monitor-cpu.png
+```
+
+---
+
+# 11. PowerShell: Identify Top CPU Processes
+
+Create:
+
+```
+Scripts/Top-CPU-Processes.ps1
+```
+
+Script:
+
+```powershell
+Get-Process |
+Sort-Object CPU -Descending |
+Select-Object -First 10 `
+Name,
+CPU,
+Id
+```
+
+---
+
+## Explanation
+
+### Get-Process
+
+```powershell
+Get-Process
+```
+
+Displays all running applications and services.
+
+---
+
+### Sort CPU Usage
+
+```powershell
+Sort-Object CPU -Descending
+```
+
+Sorts processes from highest CPU consumption.
+
+---
+
+### Show Top 10
+
+```powershell
+Select-Object -First 10
+```
+
+Displays only the highest-consuming processes.
+
+---
+
+Example Output:
+
+```
+Name              CPU       ID
+
+Teams             540       4210
+chrome            320       3020
+MsMpEng           200       1150
+```
+
+---
+
+# 12. Real-Time CPU Monitoring Script
+
+Create:
+
+```
+Scripts/CPU-Monitoring.ps1
+```
+
+Content:
+
+```powershell
+while ($true)
+{
+
+$cpu = Get-Counter '\Processor(_Total)\% Processor Time'
+
+Write-Host "CPU Usage:"
+Write-Host $cpu.CounterSamples.CookedValue "%"
+
+Start-Sleep 5
+
+}
+```
+
+---
+
+## Explanation
+
+### Get-Counter
+
+Collects Windows performance data.
+
+---
+
+### Processor Counter
+
+```
+\Processor(_Total)\% Processor Time
+```
+
+Measures total CPU usage.
+
+---
+
+### Start-Sleep
+
+```
+Start-Sleep 5
+```
+
+Refreshes every 5 seconds.
+
+---
+
+Example:
+
+```
+CPU Usage:
+42%
+
+CPU Usage:
+88%
+
+CPU Usage:
+95%
+```
+
+---
+
+# 13. Check Windows Services Causing CPU Usage
+
+Open:
+
+```
+services.msc
+```
+
+Review:
+
+Common CPU-consuming services:
+
+| Service            | Purpose                |
+| ------------------ | ---------------------- |
+| Windows Search     | File indexing          |
+| SysMain            | Application preloading |
+| Windows Update     | Updates                |
+| Defender Antivirus | Security scanning      |
+
+---
+
+# 14. Troubleshoot Windows Search Indexing
+
+Windows Search may consume CPU during indexing.
+
+---
+
+## Check Status
+
+PowerShell:
+
+```powershell
+Get-Service WSearch
+```
+
+Expected:
+
+```
+Status
+Running
+```
+
+---
+
+## Restart Service
+
+```powershell
+Restart-Service WSearch
+```
+
+---
+
+Explanation:
+
+Restarts the indexing engine.
+
+---
+
+# 15. Troubleshoot Microsoft Defender High CPU
+
+Microsoft Defender may temporarily use high CPU during scans.
+
+---
+
+## Check Defender Status
+
+PowerShell:
+
+```powershell
+Get-MpComputerStatus
+```
+
+---
+
+## Start Scan
+
+```powershell
+Start-MpScan -ScanType QuickScan
+```
+
+---
+
+## Full Scan
+
+```powershell
+Start-MpScan -ScanType FullScan
+```
+
+---
+
+# 16. Check for Malware
+
+Malware commonly causes:
+
+* High CPU
+* Unknown processes
+* Fan constantly running
+
+---
+
+Run:
+
+```
+Windows Security
+→ Virus & Threat Protection
+→ Full Scan
+```
+
+---
+
+PowerShell:
+
+```powershell
+Start-MpScan -ScanType FullScan
+```
+
+---
+
+# 17. Check CPU Temperature
+
+High temperature causes CPU throttling.
+
+Tools:
+
+* BIOS hardware monitoring
+* Manufacturer tools
+* Third-party approved tools
+
+Symptoms:
+
+* Fan always running
+* Performance drops after several minutes
+
+---
+
+Actions:
+
+* Clean ventilation
+* Remove dust
+* Check cooling system
+* Improve airflow
+
+---
+
+# 18. Check Startup Applications
+
+Too many startup programs increase CPU usage after login.
+
+Open:
+
+```
+Task Manager
+→ Startup Apps
+```
+
+Disable unnecessary applications.
+
+Examples:
+
+Disable:
+
+* Game launchers
+* Unused applications
+* Auto updaters
+
+Keep:
+
+* Antivirus
+* Drivers
+* Corporate management tools
+
+---
+
+# 19. Repair Windows Components
+
+Corrupted system files can cause excessive CPU usage.
+
+Run:
+
+```cmd
+sfc /scannow
+```
+
+Then:
+
+```cmd
+DISM /Online /Cleanup-Image /RestoreHealth
+```
+
+---
+
+# 20. Performance Monitor Analysis
+
+Open:
+
+```
+perfmon
+```
+
+Add counters:
+
+```
+Processor
+    |
+    └── % Processor Time
+```
+
+Monitor:
+
+* CPU trends
+* Long-term performance
+
+---
+
+Image:
+
+```
+Images/performance-monitor-cpu.png
+```
+
+---
+
+# 21. Verification Steps
+
+After troubleshooting:
+
+Confirm:
+
+✓ CPU usage below 50% during normal activity
+✓ Applications open normally
+✓ Fan noise reduced
+✓ System responsive
+✓ No unknown processes running
+
+---
+
+# 22. Outcome
+
+Successful troubleshooting results:
+
+✓ Improved system responsiveness
+✓ Reduced CPU consumption
+✓ Improved battery performance
+✓ Better user productivity
+✓ Reduced application freezing
+
+---
+
+# 23. Lesson Learned
+
+* Task Manager is the first diagnostic tool for performance issues.
+* Identifying the responsible process is more effective than restarting the entire system.
+* PowerShell provides efficient remote troubleshooting capabilities.
+* Security scans are essential when unknown processes consume resources.
+* Hardware health directly affects Windows performance.
+* Proper documentation improves future incident resolution.
+
+---
+
+# 24. Preventive Best Practices
+
+## Users
+
+* Close unused applications.
+* Keep Windows updated.
+* Avoid installing unapproved software.
+* Restart devices regularly.
+
+---
+
+## IT Administrators
+
+* Monitor endpoint performance using Intune.
+* Maintain driver updates.
+* Review application deployment impact.
+* Use automation scripts for health checks.
+
+---
+
+# 25. Escalation Criteria
+
+Escalate when:
+
+* CPU remains above 90% after troubleshooting.
+* Hardware overheating is suspected.
+* Malware cannot be removed.
+* CPU hardware failure is suspected.
+* Multiple devices experience the same issue.
