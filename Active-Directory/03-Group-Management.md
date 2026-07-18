@@ -1,3 +1,4 @@
+
 # Group Management (Active Directory)
 
 > Enterprise Windows Troubleshooting Knowledge Base  
@@ -13,6 +14,7 @@
 - Environment  
 - Common Tasks  
 - Tools Used  
+- Troubleshooting Workflow  
 - Step 1 – Create a New Group  
 - Step 2 – Add Members to a Group  
 - Step 3 – Remove Members from a Group  
@@ -87,6 +89,35 @@ This document provides a structured guide for creating, modifying, and managing 
 - PowerShell  
 - Group Policy Management  
 - File Explorer (for permission testing)  
+
+---
+
+# Troubleshooting Workflow
+
+```
+          Group Issue Detected
+                   │
+                   ▼
+         Identify Group Type & Scope
+                   │
+                   ▼
+         Check Group Membership Accuracy
+                   │
+                   ▼
+     Validate Permissions Assigned to Group
+                   │
+                   ▼
+     Check Replication & Domain Controller Sync
+                   │
+                   ▼
+     Review Event Logs for Group Changes
+                   │
+                   ▼
+               Apply Fixes
+                   │
+                   ▼
+               Verify Access
+```
 
 ---
 
