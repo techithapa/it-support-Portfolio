@@ -1,180 +1,261 @@
 
-
-# **01 – User Account Management**  
-Microsoft 365 Knowledge Base  
-
-
-## **Overview**
-User account management in Microsoft 365 (Microsoft Entra ID) covers the creation, modification, and lifecycle administration of user identities. This document provides step‑by‑step procedures for common tasks performed by IT administrators.
+# Microsoft 365 Knowledge Base  
+## 01 — User Account Management
 
 ---
 
-## **1. Creating a New User Account**
+## Overview
 
-### **Microsoft 365 Admin Center**
-1. Sign in to the **Microsoft 365 Admin Center**:  
-   [https://admin.microsoft.com](https://admin.microsoft.com)  
-2. Navigate to **Users → Active users**.  
-3. Select **Add a user**.  
-4. Enter:
-   - Display name  
-   - Username (UPN)  
-   - Password settings  
-   - Location  
-5. Assign appropriate **licenses**.  
-6. Configure **roles** (if required).  
-7. Save the user.
+User account management in Microsoft 365 involves creating, modifying, securing, and removing user identities across Microsoft Entra ID (Azure AD), Exchange Online, Teams, SharePoint, and other cloud services. Proper account management ensures security, compliance, and a smooth user experience.
 
-### **PowerShell (Microsoft Graph PowerShell)**
+---
+
+## Key Responsibilities
+
+- Create and manage user accounts  
+- Assign and modify licenses  
+- Configure roles and permissions  
+- Manage group memberships  
+- Reset passwords and unblock accounts  
+- Manage sign‑in status  
+- Restore deleted users  
+- Handle user profile attributes  
+- Maintain compliance and security policies  
+
+---
+
+## Tools Used
+
+- **Microsoft 365 Admin Center**  
+- **Microsoft Entra Admin Center**  
+- **Exchange Admin Center**  
+- **PowerShell (MSOnline, AzureAD, Graph)**  
+- **Azure AD Connect (Hybrid environments)**  
+
+---
+
+## User Lifecycle Stages
+
+```
+Provision → Configure → Maintain → Secure → Offboard → Archive
+```
+
+---
+
+# 1. Creating User Accounts
+
+## 1.1 Cloud‑Only User Creation
+
+### Microsoft 365 Admin Center
+```
+Users → Active Users → Add a user
+```
+
+Configure:
+- Display name  
+- Username (UPN)  
+- Password settings  
+- Roles  
+- Licenses  
+- Location  
+
+### PowerShell (Graph)
 ```powershell
 Connect-MgGraph -Scopes "User.ReadWrite.All"
 
-New-MgUser -DisplayName "John Doe" `
-  -UserPrincipalName "john.doe@contoso.com" `
-  -MailNickname "john.doe" `
-  -AccountEnabled $true `
-  -PasswordProfile @{ Password = "TempP@ssw0rd!" }
+New-MgUser -DisplayName "John Smith" `
+-UserPrincipalName "jsmith@domain.com" `
+-PasswordProfile @{Password="Password123!"} `
+-AccountEnabled $true
 ```
 
 ---
 
-## **2. Editing User Details**
+## 1.2 Hybrid User Creation (On‑Prem AD + Azure AD Connect)
 
-### **Common Editable Fields**
+### Step 1 — Create user in Active Directory
+```powershell
+New-ADUser -Name "John Smith" -GivenName "John" -Surname "Smith" `
+-SamAccountName "jsmith" -UserPrincipalName "jsmith@domain.com" `
+-Path "OU=Users,DC=domain,DC=com" -Enabled $true `
+-AccountPassword (ConvertTo-SecureString "Password123!" -AsPlainText -Force)
+```
+
+### Step 2 — Sync to Microsoft 365
+```powershell
+Start-ADSyncSyncCycle -PolicyType Delta
+```
+
+---
+
+# 2. Managing User Attributes
+
+### Common attributes to update:
 - Display name  
-- Username (UPN)  
 - Job title  
 - Department  
 - Manager  
-- Contact information  
-- Usage location  
+- Office location  
+- Phone numbers  
 
-### **Admin Center**
-1. Go to **Users → Active users**.  
-2. Select the user.  
-3. Edit the required fields under **Account**, **Profile**, or **Contact information**.
-
-### **PowerShell**
+### PowerShell
 ```powershell
-Update-MgUser -UserId "john.doe@contoso.com" -Department "Finance" -JobTitle "Analyst"
+Set-MgUser -UserId jsmith@domain.com -Department "Finance" -JobTitle "Analyst"
 ```
 
 ---
 
-## **3. Resetting a User’s Password**
-> Note: SSPR is covered in detail in **02‑Password‑Reset‑and‑SSPR.md**.
+# 3. Managing Licenses
 
-### **Admin Center**
-1. Go to **Users → Active users**.  
-2. Select the user.  
-3. Choose **Reset password**.  
-4. Provide the new password or auto‑generate one.
+### Admin Center
+```
+Users → Active Users → Select User → Licenses and Apps
+```
 
-### **PowerShell**
+### PowerShell (MSOnline)
 ```powershell
-Update-MgUser -UserId "john.doe@contoso.com" `
-  -PasswordProfile @{ Password = "NewP@ssw0rd!"; ForceChangePasswordNextSignIn = $true }
+Set-MsolUserLicense -UserPrincipalName jsmith@domain.com -AddLicenses "tenant:ENTERPRISEPACK"
 ```
 
 ---
 
-## **4. Blocking/Unblocking a User Account**
+# 4. Managing Roles
 
-### **Block Sign‑In**
-Used for security incidents or offboarding.
-
-#### Admin Center
-1. Open the user profile.  
-2. Under **Account**, toggle **Block sign‑in** → **On**.
-
-#### PowerShell
-```powershell
-Update-MgUser -UserId "john.doe@contoso.com" -AccountEnabled $false
+### Entra Admin Center
+```
+Identity → Roles & Administrators → Assignments
 ```
 
-### **Unblock Sign‑In**
+### PowerShell
 ```powershell
-Update-MgUser -UserId "john.doe@contoso.com" -AccountEnabled $true
+Add-MgRoleManagementDirectoryRoleAssignment `
+-PrincipalId <UserObjectId> `
+-RoleDefinitionId <RoleId>
 ```
 
 ---
 
-## **5. Deleting and Restoring Users**
+# 5. Managing Groups
 
-### **Delete a User**
-Admin Center → **Users → Active users → Delete user**
-
-### **Restore a Deleted User**
-1. Go to **Users → Deleted users**.  
-2. Select the user → **Restore user**.
-
-### **PowerShell**
+### Add user to group
 ```powershell
-Remove-MgUser -UserId "john.doe@contoso.com"
+Add-MgGroupMember -GroupId <GroupId> -DirectoryObjectId <UserId>
 ```
 
-Restore:
-```powershell
-Restore-MgDirectoryObject -DirectoryObjectId "<ObjectID>"
-```
+### Group Types
+| Group Type | Purpose |
+|------------|---------|
+| **Security Group** | Access control |
+| **Microsoft 365 Group** | Teams, SharePoint, Planner |
+| **Distribution List** | Email distribution |
 
 ---
 
-## **6. Assigning Roles**
+# 6. Password Management
 
-### **Admin Center**
-1. Open the user profile.  
-2. Select **Roles**.  
-3. Assign:
-   - Global Administrator  
-   - Helpdesk Administrator  
-   - Exchange Administrator  
-   - Teams Administrator  
-   - Etc.
+### Reset Password (Admin Center)
+```
+Users → Active Users → Reset Password
+```
 
-### **PowerShell**
+### PowerShell
 ```powershell
-# Assign Global Admin
-$role = Get-MgDirectoryRole | Where-Object {$_.DisplayName -eq "Global Administrator"}
-Add-MgDirectoryRoleMember -DirectoryRoleId $role.Id -DirectoryObjectId "<UserObjectID>"
+Set-MsolUserPassword -UserPrincipalName jsmith@domain.com `
+-NewPassword "NewPass123!" -ForceChangePassword $true
 ```
 
 ---
 
-## **7. Viewing Sign‑In Logs**
+# 7. Sign‑In Management
 
-### **Microsoft Entra Admin Center**
-1. Go to [https://entra.microsoft.com](https://entra.microsoft.com)  
-2. **Users → Sign‑in logs**
+### Block Sign‑In
+```powershell
+Set-MsolUser -UserPrincipalName jsmith@domain.com -BlockCredential $true
+```
 
-Useful for:
-- MFA failures  
-- Conditional Access blocks  
-- Password issues  
-- Device compliance failures  
-
----
-
-## **8. Common Troubleshooting**
-
-### **User Cannot Sign In**
-- Check **account enabled**  
-- Check **password reset**  
-- Check **MFA configuration**  
-- Check **Conditional Access policies**  
-- Check **license assignment**
-
-### **User Not Receiving Email**
-- Verify mailbox license  
-- Check mail flow rules  
-- Check message trace (see section 12)
+### Unblock Sign‑In
+```powershell
+Set-MsolUser -UserPrincipalName jsmith@domain.com -BlockCredential $false
+```
 
 ---
 
-## **9. Best Practices**
+# 8. Restoring Deleted Users
+
+### Admin Center
+```
+Users → Deleted Users → Restore
+```
+
+### PowerShell
+```powershell
+Restore-MsolUser -UserPrincipalName jsmith@domain.com
+```
+
+---
+
+# 9. Deleting Users
+
+### Admin Center
+```
+Users → Active Users → Delete User
+```
+
+### PowerShell
+```powershell
+Remove-MsolUser -UserPrincipalName jsmith@domain.com -Force
+```
+
+---
+
+# 10. Troubleshooting
+
+### User not syncing to Microsoft 365
+- Check Azure AD Connect health  
+- Ensure user is in a synced OU  
+- Validate UPN suffix  
+- Check sync errors in Synchronization Service Manager  
+
+### User cannot log in
+- Check license assignment  
+- Check MFA configuration  
+- Check sign‑in blocked status  
+- Reset password  
+
+### User missing apps
+- Verify license SKU  
+- Check service plan toggles  
+- Check Conditional Access policies  
+
+---
+
+# 11. Verification Checklist
+
+- User appears in Microsoft 365 Admin Center  
+- License assigned  
+- Mailbox created  
+- MFA configured  
+- Teams/SharePoint access working  
+- No sync errors  
+- No sign‑in errors  
+
+---
+
+# 12. Best Practices
+
+- Standardize naming conventions  
+- Automate onboarding/offboarding  
 - Enforce MFA for all users  
-- Use dynamic groups for automated provisioning  
-- Apply least‑privilege role assignments  
-- Use naming conventions for UPN and display names  
-- Automate onboarding/offboarding with PowerShell or identity governance  
-- Enable SSPR for all users  
+- Use Conditional Access  
+- Use security groups for access control  
+- Avoid direct role assignments  
+- Document user lifecycle processes  
+
+---
+
+# References
+
+- Microsoft Learn — Microsoft 365 User Management  
+- Microsoft Learn — Entra ID Administration  
+- Microsoft Learn — PowerShell for Microsoft 365  
+
