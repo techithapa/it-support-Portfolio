@@ -3,7 +3,6 @@
 ## 02 — Autopilot Deployment
 
 ---
-
 ## Overview
 
 Windows Autopilot is Microsoft’s modern provisioning solution for deploying Windows 10/11 devices with zero‑touch setup. Autopilot enables standardized configuration, automatic Intune enrolment, and seamless user-driven or pre-provisioned deployment workflows.
@@ -29,7 +28,7 @@ flowchart TD
 A[Start: New Windows Device] --> B[Collect Hardware Hash]
 B --> C[Upload Hash to Intune]
 C --> D[Assign Autopilot Profile]
-D --> E[Assign Device to User (Optional)]
+D --> E[Assign Device to User]
 E --> F[Device Shipped to User]
 
 F --> G[User Powers On Device]
@@ -37,7 +36,7 @@ G --> H[Autopilot OOBE Starts]
 H --> I[Device Joins Entra ID]
 I --> J[Intune MDM Enrollment]
 
-J --> K[Enrollment Status Page (ESP)]
+J --> K[Enrollment Status Page]
 K --> L[Apps Installed<br/>Policies Applied<br/>Security Baselines Enforced]
 
 L --> M[Device Marked Compliant]
@@ -260,6 +259,4 @@ Requirements:
 - Microsoft Learn — Intune Device Enrollment  
 - Microsoft Learn — Autopilot Troubleshooting  
 
-### **03‑Device‑Compliance‑Policies.md**
 
-with a full workflow diagram and Intune‑specific structure.
